@@ -2,6 +2,12 @@
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
+use App\Http\Controllers\Api\VentesController;
+use App\Http\Controllers\Api\AchatsController;
+use App\Http\Controllers\Api\StocksController;
+use App\Http\Controllers\Api\ClientsController;
+use App\Http\Controllers\Api\ComptabiliteController;
+use App\Http\Controllers\Api\ProjetsController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,3 +39,10 @@ Route::get('/stages', function () {
         ],
     ]);
 });
+
+Route::get('/dashboard/ventes', [VentesController::class, 'dashboard']);
+Route::get('/dashboard/achats', [AchatsController::class, 'dashboard']);
+Route::get('/dashboard/stocks', [StocksController::class, 'dashboard']);
+Route::get('/dashboard/clients', [ClientsController::class, 'dashboard']);
+Route::get('/dashboard/comptabilite', [ComptabiliteController::class, 'dashboard']);
+Route::get('/dashboard/projets', [ProjetsController::class, 'dashboard']);

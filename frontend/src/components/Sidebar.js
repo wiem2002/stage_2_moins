@@ -37,7 +37,7 @@ function Sidebar() {
       <nav style={{ width: '100%' }}>
         <ul style={{ listStyle: 'none', padding: 0, width: '100%' }}>
           {[
-            { label: 'Client', icon: '🏠', href: '#home' },
+            { label: 'Ventes', icon: '🏠', href: '#home' },
             { label: 'Founisseurs', icon: 'ℹ️', href: '#about' },
             { label: 'Produit', icon: '💼', href: '#projects' },
             { label: 'Contact', icon: '✉️', href: '#contact' },
