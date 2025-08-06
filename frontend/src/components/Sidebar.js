@@ -1,3 +1,4 @@
+// src/components/Sidebar.js
 import React from "react";
 import { NavLink } from "react-router-dom";
 import logo from "../assets/img/reactlogo.png";
@@ -13,10 +14,10 @@ const navItems = [
 
 const Sidebar = () => {
   return (
-    <aside
+    <div 
+      className="h-full"
       style={{
         width: "240px",
-        height: "100vh",
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         color: "#fff",
         borderRadius: "20px",
@@ -28,6 +29,7 @@ const Sidebar = () => {
         padding: "2rem 1rem",
       }}
     >
+      {/* Logo et titre */}
       <div style={{ marginBottom: "2rem", textAlign: "center" }}>
         <img
           src={logo}
@@ -47,7 +49,8 @@ const Sidebar = () => {
         <p style={{ fontSize: "0.95rem", opacity: 0.8 }}>Welcome</p>
       </div>
 
-      <nav style={{ width: "100%" }}>
+      {/* Navigation */}
+      <nav style={{ width: "100%", flex: 1 }}>
         <ul style={{ listStyle: "none", padding: 0, width: "100%" }}>
           {navItems.map((item) => (
             <li key={item.to} style={{ margin: "1rem 0" }}>
@@ -75,25 +78,26 @@ const Sidebar = () => {
         </ul>
       </nav>
 
+      {/* Footer */}
       <div
         style={{
           marginTop: "auto",
           opacity: 0.7,
           fontSize: "0.9rem",
           textAlign: "center",
+          width: "100%",
         }}
       >
         <hr
           style={{
             border: "none",
-            borderTop: "1px solid #fff2",
+            borderTop: "1px solid rgba(255,255,255,0.2)",
             margin: "2rem 0 1rem 0",
-            width: "100%",
           }}
         />
         <p>&copy; 2024 My Creative App</p>
       </div>
-    </aside>
+    </div>
   );
 };
 
