@@ -46,3 +46,4 @@ Route::get('/dashboard/stocks', [StocksController::class, 'dashboard']);
 Route::get('/dashboard/clients', [ClientsController::class, 'dashboard']);
 Route::get('/dashboard/comptabilite', [ComptabiliteController::class, 'dashboard']);
 Route::get('/dashboard/projets', [ProjetsController::class, 'dashboard']);
+
