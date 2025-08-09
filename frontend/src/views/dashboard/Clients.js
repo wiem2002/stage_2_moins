@@ -5,8 +5,7 @@ import {
   PieChart, Pie, Cell, Legend
 } from 'recharts';
 import {
-  FiUsers, FiUser, FiClock, FiAlertTriangle, 
-  FiMap, FiBriefcase, FiPhone, FiMail,
+  FiUsers, FiUser, FiClock, FiAlertTriangle,
   FiTrendingUp
 } from 'react-icons/fi';
 
