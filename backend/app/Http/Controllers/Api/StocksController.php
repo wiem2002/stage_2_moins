@@ -3,167 +3,146 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\JsonResponse;
+use Symfony\Component\HttpFoundation\StreamedResponse;
+use PDO;
+use Illuminate\Support\Facades\Log;
 
 class StocksController extends Controller
 {
-    public function dashboard(): JsonResponse
+    /**
+     * Récupère les stocks paginés
+     */
+    public function dashboard(Request $request): JsonResponse
     {
         try {
+            // Activation du log des requêtes SQL
+            DB::connection('sqlsrv')->enableQueryLog();
+
+            $query = DB::connection('sqlsrv')
+                ->table('ART_STOCK')
+                ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE');
+
+            // Filtres avec vérification
+            if ($request->filled('categorie')) {
+                $query->where('ARTICLES.ART_CATEG', $request->categorie);
+            }
+
+            if ($request->filled('emplacement')) {
+                $query->where('ART_STOCK.DEP_CODE', $request->emplacement);
+            }
+
+            if ($request->filled('stock_min')) {
+                $query->where('ART_STOCK.STK_REEL', '>=', (int)$request->stock_min);
+            }
+
+            $articlesStock = $query->select([
+                'ARTICLES.ART_CODE',
+                'ARTICLES.ART_LIB',
+                'ART_STOCK.STK_REEL',
+                'ART_STOCK.STK_SEUIL',
+                DB::raw('CAST(ARTICLES.ART_P_ACH * ART_STOCK.STK_REEL AS DECIMAL(10,2)) as valeur'),
+                'ARTICLES.ART_CATEG',
+                'ART_STOCK.DEP_CODE'
+            ])->paginate(20);
+
+            // Log de la requête SQL
+            $queries = DB::connection('sqlsrv')->getQueryLog();
+            Log::info('SQL Query:', $queries);
+
             return response()->json([
-                'synthese' => $this->getSyntheseData(),
-                'details' => $this->getDetailsData(),
-                'alertes' => $this->getAlertesData(),
+                'success' => true,
+                'articles_stock' => $articlesStock,
+                'debug' => config('app.debug') ? [
+                    'query' => $queries,
+                    'count' => $articlesStock->count(),
+                    'total' => $articlesStock->total()
+                ] : null,
                 'timestamp' => now()->toDateTimeString()
             ]);
+
         } catch (\Exception $e) {
+            Log::error('Database Error:', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+
             return response()->json([
-                'error' => true,
-                'message' => 'Erreur de traitement',
-                'debug' => config('app.debug') ? $e->getMessage() : null
+                'success' => false,
+                'message' => 'Erreur de base de données',
+                'error' => config('app.debug') ? $e->getMessage() : null
             ], 500);
         }
     }
 
-    private function getSyntheseData(): array
+    /**
+     * Export CSV des stocks
+     */
+    public function export(Request $request): StreamedResponse
     {
-        return [
-            'total_articles' => (int)DB::table('ARTICLES')->count(),
-            'total_valeur' => (float)DB::table('ART_STOCK')
-                ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE')
-                ->sum(DB::raw('ART_STOCK.STK_REEL * ARTICLES.ART_P_ACH')),
-            'alertes_stock_bas' => (int)DB::table('ART_STOCK')
-                ->whereColumn('STK_REEL', '<', 'STK_SEUIL')
-                ->count()
-        ];
-    }
+        try {
+            $query = DB::connection('sqlsrv')
+                ->table('ART_STOCK')
+                ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE');
 
-    private function getDetailsData(): array
-    {
-        // Solution pour SQL Server - éviter les sous-requêtes dans les agrégats
-        $stocksWithPrice = DB::table('ART_STOCK')
-            ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE')
-            ->select(
-                'ART_STOCK.DEP_CODE',
+            if ($request->filled('categorie')) {
+                $query->where('ARTICLES.ART_CATEG', $request->categorie);
+            }
+
+            if ($request->filled('emplacement')) {
+                $query->where('ART_STOCK.DEP_CODE', $request->emplacement);
+            }
+
+            if ($request->filled('stock_min')) {
+                $query->where('ART_STOCK.STK_REEL', '>=', (int)$request->stock_min);
+            }
+
+            $stocks = $query->select([
+                'ARTICLES.ART_CODE',
+                'ARTICLES.ART_LIB',
                 'ART_STOCK.STK_REEL',
-                'ARTICLES.ART_P_ACH'
-            )
-            ->get();
+                'ART_STOCK.STK_SEUIL',
+                DB::raw('CAST(ARTICLES.ART_P_ACH * ART_STOCK.STK_REEL AS DECIMAL(10,2)) as valeur'),
+                'ARTICLES.ART_CATEG',
+                'ART_STOCK.DEP_CODE'
+            ])->get();
 
-        $groupedByLocation = $stocksWithPrice->groupBy('DEP_CODE')->map(function ($items) {
-            return [
-                'quantite' => $items->sum('STK_REEL'),
-                'valeur' => $items->sum(function ($item) {
-                    return $item->STK_REEL * $item->ART_P_ACH;
-                })
+            $headers = [
+                'Code Article', 'Libellé', 'Stock Réel',
+                'Seuil Minimum', 'Valeur (TND)', 'Catégorie', 'Emplacement'
             ];
-        });
 
-        return [
-            'articles_stock_bas' => DB::table('ART_STOCK')
-                ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE')
-                ->whereColumn('ART_STOCK.STK_REEL', '<', 'ART_STOCK.STK_SEUIL')
-                ->select([
-                    'ARTICLES.ART_CODE',
-                    'ARTICLES.ART_LIB',
-                    'ART_STOCK.STK_REEL',
-                    'ART_STOCK.STK_SEUIL',
-                    DB::raw('ARTICLES.ART_P_ACH * ART_STOCK.STK_REEL as valeur')
-                ])
-                ->orderByDesc('valeur')
-                ->take(10)
-                ->get()
-                ->toArray(),
+            return response()->streamDownload(
+                function () use ($stocks, $headers) {
+                    $file = fopen('php://output', 'w');
+                    // BOM pour UTF-8
+                    fwrite($file, "\xEF\xBB\xBF");
+                    fputcsv($file, $headers);
+                    
+                    foreach ($stocks as $stock) {
+                        fputcsv($file, [
+                            $stock->ART_CODE,
+                            $stock->ART_LIB,
+                            $stock->STK_REEL,
+                            $stock->STK_SEUIL,
+                            number_format($stock->valeur, 2),
+                            $stock->ART_CATEG,
+                            $stock->DEP_CODE
+                        ]);
+                    }
+                    fclose($file);
+                },
+                'export_stocks_' . now()->format('Y-m-d_His') . '.csv',
+                [
+                    'Content-Type' => 'text/csv; charset=UTF-8',
+                ]
+            );
 
-            'par_categorie' => DB::table('ARTICLES')
-                ->join('ART_STOCK', 'ARTICLES.ART_CODE', '=', 'ART_STOCK.ART_CODE')
-                ->select([
-                    'ARTICLES.ART_CATEG',
-                    DB::raw('SUM(ART_STOCK.STK_REEL * ARTICLES.ART_P_ACH) as valeur'),
-                    DB::raw('COUNT(*) as nombre_articles')
-                ])
-                ->groupBy('ARTICLES.ART_CATEG')
-                ->get()
-                ->toArray(),
-
-            'par_emplacement' => $groupedByLocation->map(function ($value, $key) {
-                return [
-                    'DEP_CODE' => $key,
-                    'quantite' => $value['quantite'],
-                    'valeur' => $value['valeur']
-                ];
-            })->values()->toArray(),
-
-            'mouvements_recents' => DB::table('LIG_INV')
-                ->join('ARTICLES', 'LIG_INV.ART_CODE', '=', 'ARTICLES.ART_CODE')
-                ->select([
-                    'LIG_INV.DOC_DATE',
-                    'LIG_INV.DOC_PIECE',
-                    'LIG_INV.ART_CODE',
-                    'ARTICLES.ART_LIB',
-                    'LIG_INV.INV_QTE',
-                    DB::raw('CASE 
-                        WHEN DOC_PIECE LIKE \'%ENT%\' THEN \'Entrée\' 
-                        ELSE \'Sortie\' 
-                    END as type')
-                ])
-                ->orderByDesc('DOC_DATE')
-                ->take(10)
-                ->get()
-                ->toArray()
-        ];
-    }
-
-    private function getAlertesData(): array
-    {
-        return [
-            'stock_bas' => DB::table('ART_STOCK')
-                ->join('ARTICLES', 'ART_STOCK.ART_CODE', '=', 'ARTICLES.ART_CODE')
-                ->whereColumn('ART_STOCK.STK_REEL', '<', 'ART_STOCK.STK_SEUIL')
-                ->select([
-                    'ARTICLES.ART_CODE',
-                    'ARTICLES.ART_LIB',
-                    'ART_STOCK.STK_REEL',
-                    'ART_STOCK.STK_SEUIL',
-                    DB::raw('ARTICLES.ART_P_ACH * ART_STOCK.STK_REEL as valeur')
-                ])
-                ->orderByDesc('valeur')
-                ->take(5)
-                ->get()
-                ->toArray(),
-
-            'peremption' => DB::table('LIG_INV_LOTS')
-                ->whereNotNull('LLI_DT_PER')
-                ->where('LLI_DT_PER', '<', now()->addDays(30))
-                ->select([
-                    'LLI_NUMLOT',
-                    'LLI_DT_FAB',
-                    'LLI_DT_PER',
-                    DB::raw('DATEDIFF(day, GETDATE(), LLI_DT_PER) as jours_restants')
-                ])
-                ->orderBy('LLI_DT_PER')
-                ->take(5)
-                ->get()
-                ->toArray(),
-
-            'mouvements_anormaux' => DB::table('LIG_INV')
-                ->join('ARTICLES', 'LIG_INV.ART_CODE', '=', 'ARTICLES.ART_CODE')
-                ->where('INV_QTE', '>', 100)
-                ->select([
-                    'LIG_INV.DOC_DATE',
-                    'LIG_INV.ART_CODE',
-                    'ARTICLES.ART_LIB',
-                    'LIG_INV.INV_QTE',
-                    DB::raw('CASE 
-                        WHEN DOC_PIECE LIKE \'%ENT%\' THEN \'Entrée\' 
-                        ELSE \'Sortie\' 
-                    END as type')
-                ])
-                ->orderByDesc('INV_QTE')
-                ->take(5)
-                ->get()
-                ->toArray()
-        ];
+        } catch (\Exception $e) {
+            Log::error('Export Error:', ['error' => $e->getMessage()]);
+            abort(500, 'Erreur lors de l\'export');
+        }
     }
 }
