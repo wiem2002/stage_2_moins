@@ -1,7 +1,7 @@
 // src/components/Sidebar.js
 import React from "react";
 import { NavLink } from "react-router-dom";
-import logo from "../assets/img/reactlogo.png";
+import logo from "../assets/img/tactic.PNG";
 
 const navItems = [
   { label: "Ventes", icon: "📈", to: "/dashboard/ventes" },

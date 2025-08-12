@@ -258,7 +258,7 @@ export default function Stocks() {
             ART_PRIX: 15.5,
             ART_CATEG: "A",
             DEP_CODE: "D04",
-            STK_REEL: 61,
+            STK_REEL: 130,
             STK_MIN: 50,
             STK_ZONE: "Zone3"
           }
