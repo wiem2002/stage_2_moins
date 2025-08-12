@@ -3,23 +3,23 @@ import React from 'react';
 const Home = () => {
   const features = [
     {
-      title: 'Inventory Management',
-      description: 'Track and manage your stock levels in real-time',
+      title: 'Gestion des Stocks',
+      description: 'Suivez et gérez vos niveaux de stock en temps réel',
       icon: '📦',
     },
     {
-      title: 'Client Relations',
-      description: 'Manage customer information and interactions',
+      title: 'Relations Clients',
+      description: 'Gérez les informations et interactions avec vos clients',
       icon: '👥',
     },
     {
-      title: 'Financial Tracking',
-      description: 'Monitor your business finances and profitability',
+      title: 'Suivi Financier',
+      description: 'Surveillez les finances et la rentabilité de votre entreprise',
       icon: '💰',
     },
     {
-      title: 'Purchase Orders',
-      description: 'Create and track your supply chain operations',
+      title: 'Commandes Fournisseurs',
+      description: 'Créez et suivez vos opérations de chaîne d’approvisionnement',
       icon: '🛒',
     },
   ];
@@ -31,7 +31,7 @@ const Home = () => {
       maxWidth: '1200px',
       margin: '0 auto'
     }}>
-      {/* Hero Section */}
+      {/* Section d'accueil */}
       <div style={{
         background: 'linear-gradient(135deg, #6e8efb, #a777e3)',
         color: 'white',
@@ -40,12 +40,12 @@ const Home = () => {
         borderRadius: '8px',
         marginBottom: '2rem',
       }}>
-        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Welcome to TAC-TIC</h1>
-        <p style={{ fontSize: '1.25rem' }}>Your comprehensive business management solution</p>
+        <h1 style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>Bienvenue sur TAC-TIC</h1>
+        <p style={{ fontSize: '1.25rem' }}>Votre solution complète de gestion d’entreprise</p>
       </div>
 
-      {/* Features Section */}
-      <h2 style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>Key Features</h2>
+      {/* Section des fonctionnalités */}
+      <h2 style={{ fontSize: '1.75rem', marginBottom: '1.5rem' }}>Fonctionnalités Clés</h2>
       
       <div style={{
         display: 'grid',
@@ -69,25 +69,26 @@ const Home = () => {
         ))}
       </div>
 
-      {/* Getting Started Section */}
+      {/* Section démarrage */}
       <div style={{
         background: '#f5f5f5',
         borderRadius: '8px',
         padding: '20px',
         marginBottom: '2rem'
       }}>
-        <h2 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>Getting Started</h2>
+        <h2 style={{ fontSize: '1.75rem', marginBottom: '1rem' }}>Pour Bien Commencer</h2>
         <p style={{ marginBottom: '1rem' }}>
-          To begin using TAC-TIC, navigate to any of the sections in the sidebar menu. Each module is designed to help you manage a specific aspect of your business.
+          Pour commencer à utiliser TAC-TIC, accédez à l’une des sections dans le menu latéral. 
+          Chaque module est conçu pour vous aider à gérer un aspect précis de votre entreprise.
         </p>
         <p>
-          Need help? Contact our support team at <span style={{ fontWeight: 'bold' }}>support@tac-tic.com</span>.
+          Besoin d’aide ? Contactez notre équipe support à <span style={{ fontWeight: 'bold' }}>support@tac-tic.com</span>.
         </p>
       </div>
 
-      {/* Footer */}
+      {/* Pied de page */}
       <div style={{ textAlign: 'center', color: '#777', fontSize: '0.875rem' }}>
-        TAC-TIC v1.0.0 | © {new Date().getFullYear()} All Rights Reserved
+        TAC-TIC v1.0.0 | © {new Date().getFullYear()} Tous droits réservés
       </div>
     </div>
   );
